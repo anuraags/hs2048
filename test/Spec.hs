@@ -9,21 +9,6 @@ main = hspec $ do
     it "returns an empty game" $
       initEmptyGame `shouldBe` (replicate 4 $ replicate 4 EmptyTile)
 
-  describe "is tile empty" $ do
-    let game1 = initEmptyGame
-    let game2 = [[ EmptyTile, Tile 4, EmptyTile, EmptyTile ]
-          , [ Tile 2, EmptyTile, EmptyTile, EmptyTile ]
-          , [ EmptyTile, EmptyTile, EmptyTile, EmptyTile ]
-          , [ EmptyTile, EmptyTile, EmptyTile, EmptyTile ]]
-    it "returns true for an empty tile" $
-      isTileEmpty game1 0 0 `shouldBe` True
-    it "returns false for a non-empty tile" $
-      isTileEmpty game2 0 1 `shouldBe` False
-    it "returns false for a non-empty tile" $
-      isTileEmpty game2 1 0 `shouldBe` False
-    it "returns false for an out of bounds tile" $
-      isTileEmpty game2 10 10 `shouldBe` False
-
   describe "put tile" $ do
     it "puts the correct tile" $
       let game1 = putTile initEmptyGame 2 2 8
@@ -32,6 +17,15 @@ main = hspec $ do
             , [ EmptyTile, EmptyTile, Tile 8, EmptyTile ]
             , [ EmptyTile, EmptyTile, EmptyTile, EmptyTile ]]
       in game1 `shouldBe` game2
+
+  describe "get empty tiles" $ do
+    it "should return empty tiles" $
+      let [(row, col)] = getAllEmptyTiles game3
+          game3 = [[ Tile 2, Tile 4, Tile 2, Tile 2 ]
+            , [ Tile 2, EmptyTile, Tile 2, Tile 2 ]
+            , [ Tile 2, Tile 2, Tile 2, Tile 2 ]
+            , [ Tile 2, Tile 2, Tile 2, Tile 2 ]]
+      in (row, col) `shouldBe` (1, 1)
 
   describe "generate random empty tile" $ do
     it "always returns an empty tile" $
@@ -44,7 +38,7 @@ main = hspec $ do
 
   describe "init game" $ do
     it "always returns the same board with the same random number generator" $
-      let gameExpected = putTile (putTile initEmptyGame 0 0 2) 3 1 4
+      let gameExpected = putTile (putTile initEmptyGame 0 3 2) 1 0 4
           (gameResult, movementMade, score, _) = (initGame (mkStdGen 35))
       in (gameExpected, movementMade, score) `shouldBe` (gameResult, False, 0)
 

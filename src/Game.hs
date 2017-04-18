@@ -33,24 +33,27 @@ putTile (x:xs) row col val = (x:(putTile xs (row - 1) col val))
 putTile [] row col val     = []
 
 
-isTileEmpty :: GameBoard -> RowType -> ColType -> Bool
-isTileEmpty board row col = (tile == Just EmptyTile)
-  where
-    tile = getTile board row col
+getEmptyTilesInLine (EmptyTile:xs) row col = (row, col):getEmptyTilesInLine xs row (col + 1)
+getEmptyTilesInLine (x:xs) row col = getEmptyTilesInLine xs row (col + 1)
+getEmptyTilesInLine [] _ _ = []
 
-getRandomTile :: (RandomGen g) => g -> (Int, Int, g)
-getRandomTile randGen1 = (row, col, randGen3)
-  where
-    (row, randGen2) = randomR (0, 3) randGen1
-    (col, randGen3) = randomR (0, 3) randGen2
+getAllEmptyTilesRecursive :: GameBoard -> RowType -> [(RowType, ColType)]
+getAllEmptyTilesRecursive (x:xs) row = (getEmptyTilesInLine x row 0) ++ getAllEmptyTilesRecursive xs (row + 1)
+getAllEmptyTilesRecursive [] _ = []
 
-getRandomEmptyTile :: (RandomGen g) => g -> GameBoard -> (RowType, ColType, g)
-getRandomEmptyTile randGen board = if (isTileEmpty board row col)
-  then (row, col, newRandGen)
-  else getRandomEmptyTile newRandGen board
+getAllEmptyTiles :: GameBoard -> [(RowType, ColType)]
+getAllEmptyTiles board = getAllEmptyTilesRecursive board 0
+
+
+getRandomTileFromList :: (RandomGen g) => g -> [(RowType, ColType)] -> (Maybe (RowType, ColType), g)
+getRandomTileFromList randGen [] = (Nothing, randGen)
+getRandomTileFromList randGen listOfTiles = (Just (row, col), newRandGen)
   where
-    (row, col, newRandGen) = getRandomTile randGen
-    tileIsEmpty = isTileEmpty board row col
+    (randIndex, newRandGen) = randomR (0, (length listOfTiles) - 1) randGen
+    (row, col) = listOfTiles!!randIndex
+
+getRandomEmptyTile :: (RandomGen g) => g -> GameBoard -> (Maybe (RowType, ColType), g)
+getRandomEmptyTile randGen board = getRandomTileFromList randGen (getAllEmptyTiles board)
 
 generateRandomTileValue :: (RandomGen g) => g -> (Integer, g)
 generateRandomTileValue randGen1
@@ -58,20 +61,27 @@ generateRandomTileValue randGen1
   | otherwise = (4, randGen2)
   where (randomNumber, randGen2) = randomR (0 :: Integer, 100 :: Integer) randGen1
 
-fillRandomEmptyTile :: (RandomGen g) => g -> GameBoard -> (GameBoard, g)
-fillRandomEmptyTile randGen1 board = (updatedBoard, randGen2)
+
+updateBoardWithTile :: (RandomGen g) => g -> GameBoard -> Maybe (RowType, ColType) -> (GameBoard, Bool, g)
+updateBoardWithTile randGen board Nothing = (board, True, randGen)
+updateBoardWithTile randGen board (Just (row, col)) = (updatedBoard, False, newRandGen)
   where
-    (row, col, randGen2) = getRandomEmptyTile randGen1 board
-    (val, randGen3) = generateRandomTileValue randGen2
+    (val, newRandGen) = generateRandomTileValue randGen
     updatedBoard = putTile board row col val
 
+fillRandomEmptyTile :: (RandomGen g) => g -> GameBoard -> (GameBoard, Bool, g)
+fillRandomEmptyTile randGen1 board = (updatedBoard, gameFinished, randGen2)
+  where
+    (maybeTile, randGen2) = getRandomEmptyTile randGen1 board
+    (updatedBoard, gameFinished, randGen3) = updateBoardWithTile randGen2 board maybeTile
 
-initGame :: (RandomGen g) => g -> (GameBoard, Bool, Integer, g)
-initGame randGen1 = (game3, False, 0, randGen3)
+
+initGame :: (RandomGen g) => g -> (GameBoard, Bool, Integer, Bool, g)
+initGame randGen1 = (game3, False, 0, False, randGen3)
   where
     emptyGame = initEmptyGame
-    (game2, randGen2) = fillRandomEmptyTile randGen1 emptyGame
-    (game3, randGen3) = fillRandomEmptyTile randGen2 game2
+    (game2, _, randGen2) = fillRandomEmptyTile randGen1 emptyGame
+    (game3, _, randGen3) = fillRandomEmptyTile randGen2 game2
 
 
 gravitateNonEmptyTilesLeft :: [Tile] -> Integer -> ([Tile], Integer)
@@ -122,11 +132,11 @@ makeMove board MovementDown score =  (rotateBoardCounterClockwise gravitated, mo
 
 
 
-updateBoard :: (RandomGen g) => g -> GameBoard -> MovementDirection -> Integer -> (GameBoard, Bool, Integer, g)
+updateBoard :: (RandomGen g) => g -> GameBoard -> MovementDirection -> Integer -> (GameBoard, Bool, Integer, Bool, g)
 updateBoard randGen1 game movement score
-  | movementMade = (game2, True, updatedScore, randGen2)
-  | otherwise = (game1, False, updatedScore, randGen1)
+  | movementMade = (game2, True, updatedScore, gameFinished, randGen2)
+  | otherwise = (game1, False, updatedScore, gameFinished, randGen1)
   where
     (game1, movementMade, updatedScore) = makeMove game movement score
-    (game2, randGen2) = fillRandomEmptyTile randGen1 game1
+    (game2, gameFinished, randGen2) = fillRandomEmptyTile randGen1 game1
 

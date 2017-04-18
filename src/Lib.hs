@@ -6,8 +6,14 @@ import           Rendering
 import           System.Console.ANSI
 import           System.Random
 
-runLoop :: RandomGen g => (GameBoard, Bool, Integer, g) -> IO ()
-runLoop (board, movementMade, score, g) = do
+runLoop :: RandomGen g => (GameBoard, Bool, Integer, Bool, g) -> IO ()
+runLoop (board, _, score, True, _) = do
+    clearScreen
+    putStr "\n"
+    putStr $ printBoard board
+    putStrLn $ "Score: " ++ (show score)
+    putStrLn $ "No more moves!"
+runLoop (board, movementMade, score, gameFinished, g) = do
     clearScreen
     putStr "\n"
     putStr $ printBoard board
