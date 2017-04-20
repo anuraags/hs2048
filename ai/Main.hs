@@ -3,7 +3,6 @@ module Main where
 
 import           Control.Concurrent
 import           Game
-import           Lib
 import           Rendering
 import           System.Console.ANSI
 import           System.Random
