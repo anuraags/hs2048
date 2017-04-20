@@ -77,7 +77,7 @@ fillRandomEmptyTile randGen1 board = (updatedBoard, gameFinished, randGen2)
 
 
 initGame :: (RandomGen g) => g -> (GameBoard, Bool, Integer, Bool, g)
-initGame randGen1 = (game3, False, 0, False, randGen3)
+initGame randGen1 = (game3, True, 0, False, randGen3)
   where
     emptyGame = initEmptyGame
     (game2, _, randGen2) = fillRandomEmptyTile randGen1 emptyGame
