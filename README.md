@@ -12,3 +12,6 @@ To run game (with user input):
 
 To run game (with ai):
 `stack exec hs2048-ai`
+
+For user input `w,s,a,d` for movement. Use `q` to  quit the game.
+
